@@ -1,36 +1,37 @@
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
 
-# Set the variables for data directories and image dimensions
-train_dir = 'cats_and_dogs/train'
-validation_dir = 'cats_and_dogs/validation'
-test_dir = 'cats_and_dogs/test'
-IMG_HEIGHT = 150
-IMG_WIDTH = 150
-batch_size = 128
+# Load the dataset
+data = pd.read_csv('insurance.csv')
 
-# Create image generators for each dataset
-train_data_gen = ImageDataGenerator(rescale=1./255)
-validation_data_gen = ImageDataGenerator(rescale=1./255)
-test_data_gen = ImageDataGenerator(rescale=1./255)
+# Preprocess the data
+X = data.drop('expenses', axis=1)
+y = data['expenses']
 
-train_generator = train_data_gen.flow_from_directory(
-    train_dir,
-    target_size=(IMG_HEIGHT, IMG_WIDTH),
-    batch_size=batch_size,
-    class_mode='binary'
-)
+# Convert categorical data to numerical values
+categorical_cols = ['sex', 'smoker', 'region']
+transformer = ColumnTransformer([('one_hot', OneHotEncoder(), categorical_cols)], remainder='passthrough')
+X_transformed = transformer.fit_transform(X)
 
-validation_generator = validation_data_gen.flow_from_directory(
-    validation_dir,
-    target_size=(IMG_HEIGHT, IMG_WIDTH),
-    batch_size=batch_size,
-    class_mode='binary'
-)
+# Split the data into training and testing datasets
+X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42)
 
-test_generator = test_data_gen.flow_from_directory(
-    test_dir,
-    target_size=(IMG_HEIGHT, IMG_WIDTH),
-    batch_size=1,
-    class_mode=None,
-    shuffle=False
-)
+# Pop off the "expenses" column to create labels
+train_labels = y_train.copy()
+test_labels = y_test.copy()
+train_dataset = X_train.copy()
+test_dataset = X_test.copy()
+
+train_labels = train_labels.reset_index(drop=True)
+test_labels = test_labels.reset_index(drop=True)
+train_dataset = pd.DataFrame(train_dataset)
+test_dataset = pd.DataFrame(test_dataset)
+
+train_dataset.head()
