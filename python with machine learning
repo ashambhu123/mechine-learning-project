@@ -1,37 +1,24 @@
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import train_test_split
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score
 
 # Load the dataset
-data = pd.read_csv('insurance.csv')
+train_data = pd.read_csv('train.csv')
+test_data = pd.read_csv('test.csv')
 
-# Preprocess the data
-X = data.drop('expenses', axis=1)
-y = data['expenses']
+# Preprocess the text data
+X_train = train_data['message']
+y_train = train_data['label']
+X_test = test_data['message']
+y_test = test_data['label']
 
-# Convert categorical data to numerical values
-categorical_cols = ['sex', 'smoker', 'region']
-transformer = ColumnTransformer([('one_hot', OneHotEncoder(), categorical_cols)], remainder='passthrough')
-X_transformed = transformer.fit_transform(X)
+# Create a pipeline for text classification
+model = Pipeline([
+    ('vectorizer', CountVectorizer()),
+    ('classifier', MultinomialNB())
+])
 
-# Split the data into training and testing datasets
-X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42)
-
-# Pop off the "expenses" column to create labels
-train_labels = y_train.copy()
-test_labels = y_test.copy()
-train_dataset = X_train.copy()
-test_dataset = X_test.copy()
-
-train_labels = train_labels.reset_index(drop=True)
-test_labels = test_labels.reset_index(drop=True)
-train_dataset = pd.DataFrame(train_dataset)
-test_dataset = pd.DataFrame(test_dataset)
-
-train_dataset.head()
+# Train the classification model
+model.fit(X_train, y_train)
